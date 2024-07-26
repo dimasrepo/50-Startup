@@ -1,0 +1,393 @@
+---
+title: "50 Startup Data"
+author: "Dimas Aditya"
+date: 
+output: 
+  html_document:
+    theme: flatly
+    toc: yes
+    toc_float:
+      collapsed: true
+---
+
+
+
+
+```{r include=FALSE, results='hide'}
+library(tidyverse)
+library(plotly)
+library(data.table)
+library(GGally)
+library(car)
+library(scales)
+library(lmtest)
+library(skimr)
+library(MLmetrics)
+library(ggplot2)
+library(car)
+
+options(scipen = 100, max.print = 1e+06)
+```
+
+
+
+```{r echo=FALSE}
+library(png)
+img <- readPNG("data_input/starup3.png")
+
+# Tentukan faktor perbesaran
+scale_factor <- 1.5
+
+# Set the original size of the image
+img_width <- 1280
+img_height <- 720
+
+# Calculate the coordinates to enlarge and center the image
+left <- (1280 - img_width * scale_factor) / 2
+right <- left + img_width * scale_factor
+bottom <- (720 - img_height * scale_factor) / 2
+top <- bottom + img_height * scale_factor
+
+# Create a new plot
+plot.new()
+# Set the plot size to match the image size
+plot.window(xlim = c(0, 1280), ylim = c(0, 720), asp = 1)
+
+# Display the image with enlarged size
+rasterImage(img, left, bottom, right, top, interpolate = FALSE)
+```
+
+
+# Introduction
+The dataset that's we see here contains data about 50 startups. It has 5 columns: “R&D Spend”, “Administration”, “Marketing Spend”, “State”, “Profit”.
+The first 3 columns indicate how much each startup spends on Research and Development, how much they spend on Marketing, and how much they spend on administration cost, the state column indicates which state the startup is based in, and the last column states the profit made by the startup.
+
+Source : 
+https://www.kaggle.com/datasets/amineoumous/50-startups-data?select=50_Startups.csv
+
+
+# Business Question
+We will learn to create a model to predict profit using linear regression where there are 3 variables that help in creating the model.
+
+# Variable Description
+
+```{r echo=FALSE}
+library(DT)
+var <- read.csv("data_input/variable.csv")
+datatable(var, options = list(
+  scrollX = TRUE, pageLength = 5))
+```
+
+
+# 1. Data Preparation
+## 1.1 Prerequisites
+## 1.2 Importing Dataset
+
+First thing first lets import our data
+
+```{r}
+data <- read.csv("data_input/50_Startups.csv")
+head(data)
+```
+Let's check for missing values in our data.
+
+## 1.3 Data Inspection
+
+
+```{r}
+str(data)
+```
+
+
+
+```{r}
+colSums(is.na(data))
+```
+To make processing easier, let's change our data type.
+
+## 1.4 Data Types
+
+```{r}
+data1 <- data %>%
+  mutate(State = as.factor(State))
+```
+
+Once we have finished preparing our data, let's start exploring our data.
+
+# 2. Data Processing
+
+## 2.1 Data Ekploration Correlation
+
+```{r}
+ggcorr(data1, label = TRUE, label_size = 2.9, hjust = 1, layout.exp = 2)
+```
+
+From the data above we can conclude that all variables have a positive influence on the profit variable, especially for marketing and RnD
+
+
+Based on the table above, let's select the variables we need.
+
+```{r}
+data2 <- data1 %>% select(R.D.Spend,  Administration, Marketing.Spend, Profit)
+```
+
+
+The following is the distribution of values for each variable.
+
+
+```{r}
+boxplot(data2)
+```
+
+
+
+
+## 2.2 Model
+
+Next, a linear regression model can be created with the RnD predictor variable because this variable has the highest positive correlation with the Profit target variable.
+
+```{r}
+model1 <- lm(Profit ~ R.D.Spend, data = data2)
+summary(model1)
+```
+
+Here's the visualization
+
+```{r}
+plot(data2$R.D.Spend, data2$Profit)
+abline(model1, col = "red")
+```
+
+Let's make several models to see the value of each model
+
+```{r}
+model2 <- lm(formula = Profit ~ Administration + Marketing.Spend, data = data2)
+summary(model2)
+```
+
+
+```{r}
+model3  <- lm(formula = Profit ~ R.D.Spend  + Administration + Marketing.Spend, data = data2)
+summary(model3)
+```
+
+From the data above we conclude that the best model is model 3
+
+
+$$Candidate Model3$$
+
+$$Profit = 0.80572 (R.D.Spend) - 0.02682(Administration) + 0.02723(Marketing.Spend) + 50122.19299$$
+
+$$Profit = 0.8543(R.D.Spend) + 49032.8991$$
+
+
+
+## 2.3 Model Comparation
+
+Comparing the 3 models
+model1 = R.D Spend > Multiple R-squared: 0.9465 | Adjusted R-squared: 0.9454
+model2 = Administration and Marketing Spend > Multiple R-squared: 0.6097 | Adjusted R-squared: 0.5931
+model3 = All > Multiple R-squared: 0.9507 | Adjusted R-squared: 0.9475
+
+From the data above we can conclude that model 3 is the best model
+
+# 3. Prediction & Error
+
+## 3.1 Prediction
+
+First of all, let's make a prediction
+
+```{r}
+data2$pred1 <- predict(model1, data2)
+
+# prediksi dari model semua prediktor
+data2$pred2 <- predict(model2, data2)
+
+# prediksi dari model 2 prediktor
+data2$pred3 <- predict(model3, data2)
+
+head(data2)
+```
+Let's create an evaluation model
+
+## 3.2 Model Evaluation
+
+### 3.2.1 MAE 
+
+```{r}
+MAE(data2$pred3, data2$Profit)
+```
+
+```{r}
+range(data2$Profit)
+```
+
+### 3.2.2 MSE 
+
+```{r}
+MSE(data2$pred3, data2$Profit)
+```
+
+### 3.2.3 RMSE 
+
+```{r}
+RMSE(data2$pred3, data2$Profit)
+```
+
+### 3.2.4 MAPE
+
+```{r}
+MAPE(data2$pred3, data2$Profit) *100
+```
+
+From the data above, we have calculated the predictions and errors, so we can conclude that model3 is the best model and pred3 is the prediction with the best error too.
+
+After knowing the best model, let's explore the data in more depth 
+
+## 3.3 Step-wise Regression for Feature Selection
+
+
+First, we create a model without predictors
+
+```{r}
+modelnone <- lm(Profit ~ 1, data2)
+```
+
+Then we use a combination of Forward and Backward, namely both
+
+```{r}
+model_both <- step(object = modelnone,
+                      direction = "both",
+                      scope = list(upper= model3),
+                      trace=F)
+summary(model_both)
+```
+
+
+Next let's calculate the interval
+
+```{r}
+model_step <- predict(model_both, newdata = data2)
+
+head(model_step)
+```
+
+We add an upper limit and a lower limit
+
+```{r}
+model_step_interval <- predict(object = model_both,
+                                    newdata = data2,
+                                    interval = "prediction",
+                                    level = 0.95) 
+
+head(model_step_interval)
+```
+
+Let's try to visualize it
+
+```{r}
+pred.int <- predict(model3, interval = "prediction", 
+                    level = 0.95) 
+
+mydata <- cbind(data2, pred.int)
+
+ggplot(data = mydata, aes(x = Profit, y = R.D.Spend)) +
+  geom_point() +
+  labs(title = "Linear Regression of Profit by RnD Spend") +
+  geom_line(aes(y = fit), color = "blue") +
+  geom_line(aes(y = lwr), color = "red", linetype = "dashed") +
+  geom_line(aes(y = upr), color = "red", linetype = "dashed") +
+  theme_minimal()
+```
+
+
+
+```{r}
+predict(model1, data.frame(R.D.Spend = 10), interval = "confidence", level = 0.95)
+```
+
+# 4. Asumtion Test
+## 4.1 Linearity
+
+```{r}
+plot(model_both, which = 1)
+abline(h = 10, col = "green")
+abline(h = -10, col = "green")
+```
+
+The conclusion of both models from the image above is that the model is considered linear (passes the linearity assumption test because the residual value is around 0)
+
+```{r}
+hist(model_both$residuals)
+```
+
+## 4.2 Shapiro Test
+
+```{r}
+shapiro.test(model_both$residuals)
+```
+
+The Shapiro-Wilk normality test results you provided indicate that the residuals from your model (model_both$residuals) may not be normally distributed. Here's a breakdown of the results:
+
+Test Statistic (W): 0.93717. This value is close to 1, which suggests normality. However, it's not the only factor to consider.
+p-value: 0.01042. This value is less than the commonly used significance level of 0.05. A low p-value suggests that the observed data is unlikely to have come from a normal distribution by chance.
+
+> Expected condition: H0
+- p_value > alpha -> fail reject h0 (accept h0)
+- p_value < alpha -> reject h0 (accept h1)
+
+Based on the data above, p-value = 0.01042, p-value > alpha -> accept h1 (Error is not normally distributed -> does not pass normality assumption)
+
+## 4.3 Asumtion Homoscedasticity
+
+fitted.values -> is the predicted value of the training data
+residuals -> is the error value
+
+```{r}
+# scatter plot
+plot(x = model_both$fitted.values, y = model_both$residuals)
+abline(h = 0, col = "red")
+```
+## 4.4 Breusch-Pagan hypothesis test
+
+```{r}
+bptest(model_both)
+```
+
+H0: constant spread error or homoscedasticity
+* H1: error spread is NOT constant or heteroscedasticity
+
+> Expected condition: H0
+p_value > alpha -> fail reject h0 (accept h0)
+p_value < alpha -> reject h0 (accept h1)
+
+**Conclusion**: 0.3625 -> p-value > alpha (0.05) -> reject h0 (residuals spread randomly or homoscedasticity, pass the assumption test)
+
+```{r}
+vif(model_both)
+```
+**Conclusion**: not a multicollinearity predictor because vif < 10 (passes the no multicollinearity test)
+
+# 5. Conclusion & Business Recomendation
+
+
+Model 3 obtained has an R-square of 0.9507 and has a MAPE of 10.60121. Apart from that, after the linearity test analysis was carried out, the model had good criteria because the residual value was around 0.
+
+Based on this model, Profit accumulates positively with the value of the RnDSpend variable. This shows that every one unit increase in R.D.Spend is associated with an average increase of 0.80572 units in Profit, assuming other variables are constant. This is the most influential variable in the model so that companies can increase profits by providing linear efforts by continuously increasing the Research and Development budget
+
+
+# 6. Dataset
+
+```{r echo=FALSE}
+datatable(data1, options = list(
+  scrollX = TRUE, pageLength = 5))
+```
+
+
+
+
+
+
+
+
+

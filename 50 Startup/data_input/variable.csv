@@ -1,0 +1,6 @@
+Variable.Name,Role,Type,Demographic,Description
+R.D.Spend,Feature,dbl,,Total Research Spending
+Administration,Feature,dbl,,
+Marketing.Spend,Feature,dbl,,Total Marketing Spending
+State,Feature,Character,State,Regional data
+Profit,Feature,dbl,,
