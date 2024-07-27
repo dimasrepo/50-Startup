@@ -13,15 +13,6 @@ Source: [50 Startups Dataset](https://www.kaggle.com/datasets/amineoumous/50-sta
 ## Business Question
 The goal is to create a linear regression model to predict the profit of startups based on their spending in R&D, Administration, and Marketing, along with their state.
 
-## Variable Description
-| Variable Name         | Role     | Type       | Demographic | Description                  |
-|-----------------------|----------|------------|-------------|------------------------------|
-| R.D.Spend             | Feature  | dbl        |             | Total Research Spending      |
-| Administration        | Feature  | dbl        |             | Total Administrative Spending |
-| Marketing.Spend       | Feature  | dbl        |             | Total Marketing Spending     |
-| State                 | Feature  | Character  | State       | Regional data                |
-| Profit                | Feature  | dbl        |             | Total Profit                 |
-
 ## Project Structure
 - `data/`: Contains the dataset used in the project.
 - `notebooks/`: Contains Jupyter notebooks for data analysis and model building.
